@@ -6,7 +6,7 @@ Features of the project include:
 - **Data Loading**: Loads transformed data into fact and dimension tables in the data warehouse.
 - **Automation**: Event-driven architecture that triggers processes using AWS Lambda and S3 events.
 - **Monitoring and Logging**: AWS CloudWatch monitors the pipeline for operational visibility.
-- **Visualisation**: Tableau provides interactive dashboards to analyze the data.
+- **Visualisation**: Tableau provides interactive dashboards to analyse the data.
 - **S3**: Ingestion and processed buckets.
 - **Lambda**: Python-based ETL scripts for data processing.
 - **CloudWatch**: Monitoring and logging.
