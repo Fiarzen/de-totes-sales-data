@@ -7,10 +7,10 @@ The **Totesys ETL Pipeline** is a data engineering solution that extracts, trans
 - **Automation**: Event-driven architecture that triggers processes using AWS Lambda and S3 events.
 - **Monitoring and Logging**: AWS CloudWatch monitors the pipeline for operational visibility.
 - **Visualization**: Tableau provides interactive dashboards to analyze the data.
-**S3**: Ingestion and processed buckets.
+- **S3**: Ingestion and processed buckets.
 - **Lambda**: Python-based ETL scripts for data processing.
 - **CloudWatch**: Monitoring and logging.
-**Ingestion**:
+1. **Ingestion**:
 - Data is extracted from the Totesys database and placed in the S3 ingestion bucket.
 - Find the file in src/extract_lambda directory
 2. **Transformation**:
