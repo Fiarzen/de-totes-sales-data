@@ -1,0 +1,125 @@
+name: Test & Deploy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+env:
+  USER: ${{ secrets.USER }}
+  PASSWORD: ${{ secrets.PASSWORD }}
+  HOST: ${{ secrets.HOST }}
+  DATABASE: ${{ secrets.DATABASE }}
+  PORT: ${{ secrets.PORT }}
+
+  TEST_USER: "postgres"
+  TEST_PASSWORD: "postgres"
+  TEST_DATABASE: "test_database"
+  TEST_HOST: "localhost"
+  TEST_PORT: 5432
+  POSTGRES_HOST: "localhost"
+  POSTGRES_PORT: 5432
+
+jobs:
+  run-tests:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+    services:
+        # Label used to access the service container
+      postgres:
+          # Docker Hub image
+        image: postgres
+          # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+          # Set health checks to wait until postgres has started
+        options: >-
+            --health-cmd pg_isready
+            --health-interval 10s
+            --health-timeout 5s
+            --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Use Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.6"
+      - name: Install Psql
+        run: |      
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends postgresql-client
+      - name: Install Requirements
+        run: make requirements
+      - name: Dev Setup
+        run: make dev-setup
+
+      - name: PSQL Setup
+        run: |      
+          source ./venv/bin/activate
+          export PGPASSWORD=postgres
+          psql -h localhost -U postgres -f src/db/setup_dbs.sql
+          python src/db/run_seed.py
+
+      - name: AWS Test Credentials
+        run: |
+          mkdir ~/.aws && touch ~/.aws/credentials
+          echo -e "[default]\naws_access_key_id = test\naws_secret_access_key = test" > ~/.aws/credentials
+
+      - name: Run Tests
+        run : make run-checks
+      
+      - name: Safety
+        uses: pyupio/safety-action@v1
+        with:
+          api-key: ${{ secrets.SAFETY_API_KEY }}
+
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    needs: run-tests
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Make Layer Dependencies
+        run: make layer-dependencies
+
+      - name: Create JSON File
+        run: |
+          echo '{"user": "${{ secrets.USER }}", 
+          "password": "${{ secrets.PASSWORD }}", 
+          "host": "${{ secrets.HOST }}", 
+          "database": "${{ secrets.DATABASE }}", 
+          "port": ${{ secrets.PORT }}}' > db_credentials.json
+          echo '{"user": "${{ secrets.W_USER }}", 
+          "password": "${{ secrets.W_PASSWORD }}", 
+          "host": "${{ secrets.W_HOST }}", 
+          "database": "${{ secrets.W_DATABASE }}", 
+          "port": ${{ secrets.W_PORT }}}' > warehouse_credentials.json
+
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_ACCESS_KEY_ID }}"
+          aws-region: "eu-west-2"
+      - name: Terraform Setup
+        uses: hashicorp/setup-terraform@v3
+      - name: Terraform Creation
+        working-directory: terraform
+        run: |
+          terraform init
+          terraform plan
+          terraform apply -auto-approve
+            
