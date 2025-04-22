@@ -1,7 +1,7 @@
 The **Totesys ETL Pipeline** is a data engineering solution that extracts, transforms, and loads data into an OLAP data warehouse for analytical purposes. The project incorporates AWS services to build a robust, automated pipeline and provides insights through **Tableau** dashboards.
 
 
-**Data Ingestion**: Extracts raw data from the Totesys database and ingests it into an AWS S3 ingestion bucket.
+- **Data Ingestion**: Extracts raw data from the Totesys database and ingests it into an AWS S3 ingestion bucket.
 - **Data Transformation**: Processes raw data into a structured schema suitable for the data warehouse.
 - **Data Loading**: Loads transformed data into fact and dimension tables in the data warehouse.
 - **Automation**: Event-driven architecture that triggers processes using AWS Lambda and S3 events.
